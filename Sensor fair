@@ -1,0 +1,32 @@
+
+#include <SPI.h>
+#include <RF24.h>
+
+RF24 radio(4, 5); // Пины CE и CSN модуля nRF24L01 для ESP32
+const byte addresses[][6] = {"00001", "00002"}; // Адреса для беспроводной связи, по одному на каждый приемник
+
+int flamePin = 34; // Пин подключения датчика пламени
+
+void setup() {
+  Serial.begin(9600);
+  radio.begin();
+  radio.openWritingPipe(addresses[0]); // Установка первого адреса для отправки
+  radio.setPALevel(RF24_PA_LOW);
+  radio.stopListening();
+}
+
+void loop() {
+  int flameValue = analogRead(flamePin); // Чтение данных с датчика пламени
+  
+  int message = 3;
+  radio.write(&message, sizeof(int)); // отправка данных при обнаружение пламени
+  
+  if (flameValue > 600) {
+    // Отправка сообщения о пламени к каждому приемнику
+    for (int i = 0; i < 2; i++) {
+      radio.openWritingPipe(addresses[i]); // Выбор адреса передачи
+      radio.write(&flameMessage, sizeof(flameMessage)); // Отправка сообщения
+    }
+  
+  delay(5000); // Задержка перед следующей отправкой
+}
