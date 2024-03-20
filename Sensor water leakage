@@ -1,0 +1,30 @@
+#include <SPI.h>
+#include <RF24.h>
+
+RF24 radio(4, 5); // Пины CE и CSN модуля nRF24L01 для ESP32
+
+const byte addresses[][6] = {"00001", "00002}"; // Адреса для потоковой связи, по одному на каждый приемник
+
+int waterSensorPin = 2; // Пин, к которому подключен датчик уровня воды
+
+void setup() {
+  Serial.begin(9600);
+  radio.begin();
+  radio.openWritingPipe(addresses[0]); // Установка первого адреса для отправки
+  radio.setPALevel(RF24_PA_LOW); // Устанавливаем низкий уровень мощности передатчика
+  radio.stopListening();
+}
+
+void loop() {
+  int sensorValue = analogRead(waterSensorPin); // Считываем значение с датчика уровня воды
+  
+  const char* message = 4;
+  
+   // Отправка сообщения к каждому приемнику
+  for (int i = 0; i < 2; i++) {
+    radio.openWritingPipe(addresses[i]); // Выбор адреса передачи
+    radio.write(&message, sizeof(message)); // Отправка сообщения
+    }
+  
+  delay(5000); // Задержка перед следующей отправкой
+}
