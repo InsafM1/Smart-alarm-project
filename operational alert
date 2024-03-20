@@ -1,0 +1,86 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <RF24.h>
+
+#define ZUMMER_PIN 8 // Пин, к которому подключен зуммер
+ 
+ #define VIB_PIN 2 // Пин, к которому подключен вибромодуль
+ 
+#define OLED_RESET -1
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
+
+RF24 radio(5, 17); // параметры пина CE, CSN
+
+const byte address[6] = "00001";
+
+void setup() {
+  pinMode(ZUMMER_PIN, OUTPUT); // Установка пина зуммера как выход
+  pinMode(VIB_PIN, OUTPUT); // Установка пина вибромодуля как выход
+  digitalWrite(VIB_PIN, LOW); // Устанавливаем уровень логического "0" на выводе VIB_PIN'
+  Serial.begin(9600); // Через него запускается последовательная связь для вывода откладочной информации
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("Не удалось выделить SSD1306"));
+    for (;;);
+  }
+  radio.begin();
+  radio.openReadingPipe(1, address);
+  radio.startListening();
+  display.display(); // Проинициализируйте дисплей с буфером содержимого
+  display.clearDisplay();
+}
+
+void loop() {
+  int sensorValue = analogRead(A0); // Считывание значения с датчика или другого источника
+  if (radio.available()) {
+    int incomingData;
+    radio.read(&incomingData, sizeof(int));
+    Serial.print("Полученное сообщение: ");
+    Serial.println(incomingData);
+
+    display.clearDisplay();
+    switch (incomingData) {
+      case 1:
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println("Обнаружено движение");
+        tone(ZUMMER_PIN, 1000); // Включение зуммера на частоте 1000 Гц
+        digitalWrite(VIB_PIN, HIGH); delay(30000); // Включаем вибромодуль на 30 секунд
+        break;
+      case 2:
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println("Обнаружен дым");
+        tone(ZUMMER_PIN, 1000); // Включение зуммера на частоте 1000 Гц
+        digitalWrite(VIB_PIN, HIGH); delay(30000); // Включаем вибромодуль на 30 секунд
+        break;
+      case 3:
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println("Обнаружено пламя");
+        tone(ZUMMER_PIN, 1000); // Включение зуммера на частоте 1000 Гц
+        digitalWrite(VIB_PIN, HIGH); delay(30000); // Включаем вибромодуль на 30 секунд
+        break;
+       case 4:
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println("Уровень воды поднимается");
+        tone(ZUMMER_PIN, 1000); // Включение зуммера на частоте 1000 Гц
+        digitalWrite(VIB_PIN, HIGH); delay(30000); // Включаем вибромодуль на 30 секунд
+        break;
+        
+      default:
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println("Недопустимый параметр"); // Выводися в случае отсутствия входных данных или при получении некорректных значений в
+        break;
+    }
+    display.display();
+  }
+}
