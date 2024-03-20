@@ -27,6 +27,7 @@ void loop() {
       radio.openWritingPipe(addresses[i]); // Выбор адреса передачи
       radio.write(&flameMessage, sizeof(flameMessage)); // Отправка сообщения
     }
+}
   
   delay(5000); // Задержка перед следующей отправкой
 }
